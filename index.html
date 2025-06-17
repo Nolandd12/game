@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tebak-Tebakan Jokes</title>
+
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #ffd3a5, #fd6585);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+      width: 90%;
+      max-width: 550px;
+      text-align: center;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      margin: 8px;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6a89cc, #38ada9);
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #38ada9, #6a89cc);
+      transform: scale(1.05);
+    }
+
+    #logout-btn {
+      background: linear-gradient(135deg, #ff7675, #d63031);
+      margin-top: 10px;
+    }
+
+    #logout-btn:hover {
+      background: linear-gradient(135deg, #d63031, #ff7675);
+    }
+
+    #timer {
+      font-size: 20px;
+      color: #d63031;
+      background: #ffeaa7;
+      padding: 8px 16px;
+      display: inline-block;
+      border-radius: 25px;
+      margin-bottom: 15px;
+      font-weight: bold;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 18px;
+      color: #2d3436;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      animation: blink 2s infinite;
+      font-size: 32px;
+      color: #ff4081;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .promo {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #2d3436;
+    }
+
+    .highlight {
+      font-weight: bold;
+      color: #e84393;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login -->
+  <div class="container" id="login-screen">
+    <h1>Selamat Datang Di Tebak Tebakan Jokes</h1>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <br />
+    <button onclick="validateLogin()">Login</button>
+    <p>&copy; 2025 Aditya Herlambang.<br>Semua Hak Dilindungi.</p>
+    <p id="login-error" style="color:red;"></p>
+  </div>
+
+  <!-- Promo -->
+  <div class="container hidden" id="promo-screen">
+    <h1>Selamat Datang!</h1>
+    <p class="promo">Bersiaplah untuk permainan <span class="highlight">tebak-tebakan paling gokil</span>! 🎉</p>
+    <p class="promo">Uji kecepatan dan kelucuanmu dalam menjawab pertanyaan-pertanyaan kocak yang bisa bikin ketawa ngakak! 🤣</p>
+    <button onclick="startGame()">Mulai Game</button>
+  </div>
+
+  <!-- Game -->
+  <div class="container hidden" id="game-screen">
+    <h1>Tebak-Tebakan Jokes</h1>
+    <div id="timer">Waktu: 15</div>
+    <div id="question-container">
+      <p id="question-text"></p>
+      <div id="options-container"></div>
+    </div>
+    <div id="result"></div>
+    <button id="next-btn" onclick="loadNextQuestion()" style="display: none;">
+      <audio id="correct-sound" src="tawa.mp3" preload="auto"></audio>
+      Lanjut
+    </button>
+    <button id="restart-btn" onclick="restartGame()" style="display: none;">Ulangi</button>
+    <button id="logout-btn" onclick="confirmLogout()">Logout</button>
+  </div>
+
+  <!-- SCRIPT GAME -->
+  <script>
+    let currentIndex = -1;
+    let timer;
+    let timeLeft;
+
+    const questions = [
+      { question: "Kuyang kuyang apa yang (-)?", options: ["Kuyang Satu", "Kuyang nyasar", "Kuyang ke barak", "Kuyang mabuk"], answer: "Kuyang Satu" },
+      { question: "Apa bedanya kamu sama kalender?", options: ["Kalender ada tanggalnya", "Kamu lebih rumit", "Kalender dicoretin, kamu diingetin", "Kalender bisa dilihat setiap hari, kamu enggak"], answer: "Kalender ada tanggalnya" },
+      { question: "Kenapa ayam menyeberang jalan?", options: ["Mau nyebrang doang", "Cari nasi goreng", "Ikut lomba lari", "Mau ke sisi lain"], answer: "Mau ke sisi lain" },
+      { question: "Apa yang naik tapi tidak pernah turun?", options: ["Harga cabe", "Harga emas", "Usia", "Pajak"], answer: "Usia" },
+      { question: "Apa persamaan antara kamu dan ujian?", options: ["Bikin deg-degan", "Sama-sama sulit", "Butuh persiapan", "Bikin stres"], answer: "Bikin deg-degan" },
+      { question: "Mobil apa yang bisa terbang?", options: ["Mobil-mobilan", "Mobil box", "Mobil legend", "Mobil-mobilan khayalan"], answer: "Mobil legend" },
+      { question: "Apa yang kalau dibagi malah bertambah?", options: ["Rahasia", "Cinta", "Masalah", "Uang"], answer: "Cinta" },
+      { question: "Kalau ayam jadi manusia, jadi apa?", options: ["Ayam goreng", "Ayam jantan", "Ayam kampus", "Tidak jadi ayam"], answer: "Tidak jadi ayam" },
+      { question: "Apa yang punya kaki tapi nggak bisa jalan?", options: ["Meja", "Kursi", "Boneka", "Kulkas"], answer: "Meja" },
+      { question: "Benda apa yang kalau dipukul malah senang?", options: ["Drum", "Meja", "Kucing", "Gong"], answer: "Drum" },
+      { question: "Kenapa kucing suka tidur?", options: ["Karena dia lelah", "Karena kerja malam", "Karena ga punya kerjaan", "Karena dia kucing"], answer: "Karena dia kucing" },
+      { question: "Apa yang selalu datang tapi tidak pernah tiba?", options: ["Besok", "Hari libur", "Rejeki", "Pacar"], answer: "Besok" }
+    ];
+
+    function validateLogin() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      if (user === "admin" && pass === "123") {
+        document.getElementById("login-screen").classList.add("hidden");
+        document.getElementById("promo-screen").classList.remove("hidden");
+      } else {
+        document.getElementById("login-error").innerText = "Username atau password salah!";
+      }
+    }
+
+    function startGame() {
+      document.getElementById("promo-screen").classList.add("hidden");
+      document.getElementById("game-screen").classList.remove("hidden");
+      loadNextQuestion();
+    }
+
+    function startTimer() {
+      clearInterval(timer);
+      timeLeft = 15;
+      document.getElementById('timer').innerText = "Waktu: " + timeLeft;
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').innerText = "Waktu: " + timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          gameOver("Waktu habis! Game Over!");
+        }
+      }, 1000);
+    }
+
+    function checkAnswer(button) {
+      clearInterval(timer);
+      const userAnswer = button.innerText;
+      const correctAnswer = questions[currentIndex].answer;
+      if (userAnswer === correctAnswer) {
+        document.getElementById('correct-sound').play();
+        document.getElementById('result').innerText = "Anda Benar!";
+        document.getElementById('next-btn').style.display = "inline-block";
+        disableOptions();
+      } else {
+        gameOver("Jawaban salah. Game Over!");
+      }
+    }
+
+    function disableOptions() {
+      const buttons = document.querySelectorAll('#options-container button');
+      buttons.forEach(btn => btn.disabled = true);
+    }
+
+    function loadNextQuestion() {
+      currentIndex++;
+      if (currentIndex >= questions.length) {
+        document.getElementById('question-text').innerText = "Selamat! Anda telah menyelesaikan semua tebakan!";
+        document.getElementById('options-container').innerHTML = "";
+        document.getElementById('next-btn').style.display = "none";
+        document.getElementById('timer').style.display = "none";
+        return;
+      }
+
+      const q = questions[currentIndex];
+      document.getElementById('question-text').innerText = q.question;
+      const container = document.getElementById('options-container');
+      container.innerHTML = '';
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.innerText = opt;
+        btn.onclick = () => checkAnswer(btn);
+        container.appendChild(btn);
+      });
+
+      document.getElementById('result').innerText = "";
+      document.getElementById('next-btn').style.display = "none";
+      document.getElementById('timer').style.display = "block";
+      startTimer();
+    }
+
+    function gameOver(message) {
+      clearInterval(timer);
+      document.getElementById('result').innerText = message;
+      disableOptions();
+      document.getElementById('next-btn').style.display = "none";
+      document.getElementById('restart-btn').style.display = "inline-block";
+      document.getElementById('timer').style.display = "none";
+    }
+
+    function restartGame() {
+      currentIndex = -1;
+      document.getElementById('restart-btn').style.display = "none";
+      loadNextQuestion();
+    }
+
+    function confirmLogout() {
+      Swal.fire({
+        title: "Yakin ingin logout?",
+        text: "Kemajuan Anda tidak akan disimpan.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#aaa",
+        confirmButtonText: "Ya, logout!",
+        cancelButtonText: "Batal"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          logoutGame();
+        }
+      });
+    }
+
+    function logoutGame() {
+      clearInterval(timer);
+      currentIndex = -1;
+      document.getElementById("game-screen").classList.add("hidden");
+      document.getElementById("login-screen").classList.remove("hidden");
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+      document.getElementById("result").innerText = "";
+      document.getElementById("options-container").innerHTML = "";
+      document.getElementById("question-text").innerText = "";
+      document.getElementById("restart-btn").style.display = "none";
+      document.getElementById("next-btn").style.display = "none";
+      document.getElementById("timer").style.display = "none";
+      document.getElementById("login-error").innerText = "";
+    }
+  </script>
+</body>
+</html>
